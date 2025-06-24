@@ -6,27 +6,20 @@ pt = 72
 myHeadlineFont='/Users/david/Documents/Education/Clients/Typographics-2025/assets/Tick-Regular.otf'
 myAffiliationFont = 'Export'
 
-        
-colors = {
-    'cover-bg': hex2rgb('#000000'),
-    'overprint': hex2rgb('#FB5A3D'),
-    'blue': hex2rgb('#0051ff')
-    }
 
-
-blueColor = (77/255, 170/255, 248/255)                        
-redColor = (234/255, 51/255, 35/255)
+blueColor = (0/255, 170/255, 255/255)                        
+redColor = (255/255, 12/255, 12/255)
+yellowColor = (255/255, 255/255, 0/255)
     
-exceptionsList = [
-
-    ]
-
+DEBUG = False
 
 def getRandom():
+    # return a random value between -1 and 1
     return random.random()*random.choice([-1, 1])
     
-def getRandomRange(theMin, theMax, alsoNegative=True):
-    value = randint(int(theMin*100), int(theMax*100) ) / 100
+def getRandomRange(theMin, theMax, alsoNegative=True, multiplier=100):
+    # return a random range, but don't worry as muchabout integers
+    value = randint(int(theMin*multiplier), int(theMax*multiplier) ) / multiplier
     if alsoNegative:
         if random.random() > .5:
             value *= -1
@@ -34,33 +27,34 @@ def getRandomRange(theMin, theMax, alsoNegative=True):
 
 
 def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
-    myName = myName.upper()
-    myName = myName.replace(' MC', " Mc")
     w, h = 4*pt, 3*pt
     if drawNewPage:
         newPage(w, h)
-    #with savedState():
-    #    scale(.1975)
+       
+    # background 
     fill(*blueColor)
     rect(0, 0, w, h)
-    
+
+    # calculate outer margins
     m = 6
     mw = w - m*2
     bottom = 8
     mh = h - m - bottom
 
-    affiliationOffset = 20
-    tfs = 85
-    leadingMultiplier = .93
-    trackingValue=20/1000
-    
+    # set some constants
+    affiliationOffset = 20 # less room for name when affiliation is present
+    tfs = 85 # the font size by default
+    leadingMultiplier = .94 # the leading by default
+    trackingValue=20/1000 # the tracking bydefault
+
+    # reduce the font size to accomodate the longest word
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
         wordWidth = textSize(wordFS)[0]
         if wordWidth > mw:
             tfs = mw/wordWidth * tfs
-            
-
+        
+    # try to arrange the words into lines
     lines = []
     words = []
     lineTotal = 0
@@ -74,11 +68,12 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
             words = []
         if word:
             words.append(word)
-        lineTotal += spaceWidth + wordWidth
+        lineTotal += wordWidth# + spaceWidth
     if words:
         lines.append(words)
-        
-        
+    
+    # arrange the words into lines again
+    # i'm not sure why i have this twice
     lines = []
     words = []
     lineTotal = 0
@@ -92,177 +87,232 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
             words = []
         if word:
             words.append(word)
-        lineTotal += spaceWidth+wordWidth
+        lineTotal += wordWidth# + spaceWidth
     if words:
         lines.append(words)
-       
+   
+    # make some exceptions for long names
     if len(lines) > 2: 
         if myAffiliation:
             tfs = min(tfs, 58)
         else:
             tfs = min(tfs, 64)
-        
+    if len(lines) > 3 and myName.startswith('MARTA REBECA'):
+        lines = [lines[0], lines[1], lines[2]+lines[3]]
+    
+    # okay now we are going to typeset the name
     yOffset = 8
     affiliationY = 0
-
-        
     titleHeight = mh
-    
+
+    # move things around if an affiliate exists
     if myAffiliation:
         bottom += affiliationOffset
         titleHeight -= affiliationOffset
         yOffset += affiliationOffset*.25
 
 
+    # this formatted string is FPO, we will not use it
     fs = FormattedString(myName, font=myHeadlineFont, fontSize=tfs, lineHeight=tfs*leadingMultiplier, fill=(1, 1, 0, .5), align="center")
-    
-    
-    fill(1, 0, 0, .5)
-    
-    
+
+
+    #fill(1, 0, 0, .5)
+
+    # get the dimensions of the text
     textWidth, textHeight = textSize(fs, width=mw)
-    yOffset += 0
+
+    # center the text
     xOffset = (mw-textWidth)/2
 
     #fill(0, 1, 0, .5)
     #rect(m+xOffset, bottom+yOffset, textWidth, textHeight)
-    
-    print(lines)
-    
-    textBoxOffset = tfs*.025
-    
-    nameBox = (m, bottom+yOffset+textBoxOffset, mw, textHeight)
-    #textBox(fs, nameBox)
-    
+
+    #print(lines)
+
+    if DEBUG:
+        textBoxOffset = tfs*.025
+        nameBox = (m, bottom+yOffset+textBoxOffset, mw, textHeight)
+        textBox(fs, nameBox)
+
+    # we will draw a black box
+    # we will increase the margins slightly
+    # so that the names will overlap the margins
     m += 7
-    mw -= 12
-    mh -= 12
+    mw -= 14
+    mh -= 14
+
+    if DEBUG:
+        fill(0, .5)
+        rect(0, 0, width(), height())
+
     
-    #fill(0, .5)
-    #rect(0, 0, width(), height())
-    
+    # we will typeset into two main bezier paths
+    # the first will just contain the letters
+    # the second will contain the letters cut out of a background field
     bp1 = BezierPath()
     bp2 = BezierPath()
+
+    # draw background rectangle
     bp2.beginPath()
-    
     bp2.moveTo((m - random.random() * m/2, m - random.random() * m/2 ))
     bp2.lineTo((m+mw + random.random() * m/2, m - random.random() * m/2 ))
     bp2.lineTo((m+mw + random.random() * m/2, m+mh + random.random() * m/2))
     bp2.lineTo((m - random.random() * m/2, m+mh + random.random() * m/2))
     bp2.closePath()
-    
+
     theBox = bp2.copy()
 
     font(myHeadlineFont, tfs)
-    yAdvance = height()/2 + yOffset
+    
+    # start from half the height, plus offset
+    yAdvance = h/2 + yOffset
+    
+    
+    # center line, if one line
     if len(lines) == 1:
         yAdvance -= tfs/2
 
+    # shift for 3 lines, this is very hacky and should be rewritten
     if len(lines) > 2:
         yAdvance += tfs/2 - 2
 
-
-    
     with savedState():
-        #translate(m, bottom+yOffset+textBoxOffset*2+textHeight)
-        #oval(-10, -10, 20, 20)
-        # draw lines
-        fsCopy = fs.copy()
+        if DEBUG:
+            translate(m, bottom+yOffset+textBoxOffset*2+textHeight)
+            oval(-10, -10, 20, 20)
+            
+
         #translate(0, -tfs*leadingMultiplier)
+        # 
         if len(lines) == 1:
             yOffset -= 10
-            
-        # draw first baseline
-        #with savedState():
-        #    stroke(1, 0, 0)
-        #    strokeWidth(5)
-        #    line((0, yAdvance), (width(), yAdvance))
+        
+        if DEBUG:
+            # draw first baseline
+            with savedState():
+               stroke(1, 0, 0)
+               strokeWidth(5)
+               line((0, yAdvance), (width(), yAdvance))
 
-            
-            
+        
+        # establish the bounce direction
+        # this will alternate letter by letter
         bounceDirection = choice([-1, 1])
+        
+        # loop through each line
         for myLine in lines:
+            # track xAdvance
             xAdvance = m
             with savedState():
+                # join the words into a single string
                 myLine = ' '.join(myLine)
+                # get the width
                 lineFS = FormattedString(myLine, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
                 lineWidth = textSize(lineFS)[0]
+                # move the xOffset so the line is centered
                 xOffset = (mw-lineWidth)/2
+                # hang line-ending hyphens
                 if myLine[-1] == '-':
                     xOffset += tfs/6
+                # move our x position to the cenetered offset
                 xAdvance += xOffset
-                fill(1, 1, 1)
-                #text(line, (xOffset, -tfs*leadingMultiplier))
+                if DEBUG:
+                    fill(1, 1, 1)
+                    text(line, (xOffset, -tfs*leadingMultiplier))
+                
+                # keep track of the previous letter
                 previousLetterWidth = 0
                 previousLetter = ''
-                
+            
+                # loop through each letter in the line
                 for letter in myLine:
+                    # get the combined width of the previous letter and the current letter
                     comboFS = FormattedString(previousLetter+letter, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs) 
                     letterFS = FormattedString(letter, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs) 
                     letterWidth = textSize(letterFS)[0]
+                    # determine the kerning value by finding the difference between
+                    # the combined width and the two letters’ setwidths
                     kern = textSize(comboFS)[0] - letterWidth - previousLetterWidth
-                    
+                
+                    # add kerning to the x advance
                     xAdvance += kern
-                    
+                
+                    # determine bounce for this letter
+                    # a random portion of the font size and the bounce direction
                     bounce = randint(35, 55)/1000 * tfs * bounceDirection
                     #bounce = 0
 
-                    
+                    # change bounce direction
                     if bounceDirection == 1:
                         bounceDirection = -1
                     elif bounceDirection == -1:
                         bounceDirection = 1
-                
+            
+                    # draw this letter into a path
                     bpLetter = BezierPath()
-                    
                     bpLetter.text(letter, (xAdvance, yAdvance), font=myHeadlineFont, fontSize=tfs)
+                    # try to determine dimensions of letter
                     try:
                         bpLetterWidth = bpLetter.bounds()[2] - bpLetter.bounds()[0]
                         bpLetterHeight = bpLetter.bounds()[3] - bpLetter.bounds()[1]
                     except:
                         bpLetterWidth = 0
                         bpLetterHeight = tfs/3
+                    # rotate from center of letter, if we know it
                     bpLetter.rotate(getRandom()*2, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
+                    # incorporate the bounce
                     bpLetter.translate(0, bounce)
 
+                    # add the letter to the main bezier path
                     bp1 = bp1.union(bpLetter)
 
-
+                    # do it all again, this time with an offset and more rotation
                     bpLetter = BezierPath()
-                    
+                    # shift things either one way or the other
+                    # trying to avoid little shifts that are close to zero
                     displace = random.choice([-23/1000*tfs, 23/1000*tfs])
                     bpLetter.text(letter, (xAdvance+displace, yAdvance-displace), font=myHeadlineFont, fontSize=tfs)
 
-
+                    # try to determine dimensions of letter
                     try:
                         bpLetterWidth = bpLetter.bounds()[2] - bpLetter.bounds()[0]
                         bpLetterHeight = bpLetter.bounds()[3] - bpLetter.bounds()[1]
                     except:
                         bpLetterWidth = 0
                         bpLetterHeight = tfs
-
+                    # rotate and translate the letter
                     bpLetter.rotate(getRandomRange(2, 6, True), (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
                     bpLetter.translate(0, bounce+getRandom()*2)
-                    
-                    
+                
+                    # add the letter to the larger bezierPath
                     bp2 = bp2.difference(bpLetter)
-                    
-                    
-                    translate(letterWidth)
+                
+                    if DEBUG:
+                        translate(letterWidth)
+                    # advance to the next letter
                     xAdvance += letterWidth
                     
+                    # set this as the previous letter
                     previousLetterWidth = letterWidth
                     previousLetter = letter
   
-            #translate(0, -tfs*leadingMultiplier)
+            if DEBUG:
+                translate(0, -tfs*leadingMultiplier)
+            # move to the next line
             yAdvance -= tfs*leadingMultiplier
-    
+
+        # once the bezier paths are complete, we will draw them to canvas
+
+        # bp1 is white
         fill(1)   
         drawPath(bp1)
+        
+        # get the overlap, and draw it in black
         fill(0)
         bp3 = bp2.difference(bp1)
-        #bp3 = bp3.difference(theBox)
         drawPath(bp3)
+        
+        # draw the shifted portion in red
         fill(*redColor)
         bp4 = bp2.intersection(bp1)
         drawPath(bp4)
@@ -270,20 +320,22 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
 
 
 
-
-    affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=10, lineHeight=12, fill=colors['overprint'], align="center", tracking=1)
+    # typeset the affiliation
     
+    affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=10, lineHeight=12, fill=yellowColor, align="center", tracking=1)
+    
+    # remove tracking and shrink font size for long affiliations
     if textOverflow(affiliationFS, (0, 0, mw, 12)):
         print('LONG AFFILIATION', affiliationFS)
-        affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=9, lineHeight=12, fill=colors['overprint'], align="center", tracking=0)
+        affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=9, lineHeight=12, fill=yellowColor, align="center", tracking=0)
+
+    # draw affiliation to canvas
+    textBox(affiliationFS, (0, affiliationY, w, 28))
 
 
-    textBox(affiliationFS, (0, affiliationY, width(), 28))
 
 
-
-
-
+    
 
 
 ## SHEET FUNCTIONS
@@ -291,7 +343,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
 def drawCropMarks(rows, cols, boxWidth, boxHeight, badgeWidth, badgeHeight, margin):
     # assuming we are in the top right, draw crop marks
     with savedState():
-        stroke(1)
+        stroke(0)
         for row in range(rows+1):
             line((-margin, -row*badgeHeight), (-margin/2, -row*badgeHeight))
             line((boxWidth+margin, -row*badgeHeight), (boxWidth+margin/2, -row*badgeHeight))
@@ -306,12 +358,13 @@ def drawCropMarks(rows, cols, boxWidth, boxHeight, badgeWidth, badgeHeight, marg
 
 
 
-
+# draw sheets of badges
+# this is pretty much the same as previous years
 def drawSheets(data, w, h, sheetWidth=8.5*pt, sheetHeight=11*pt, badgeWidth=None, badgeHeight=None, margin=.25*pt, multiple=2, pattern=None):
     """
     Make a sheet of badges for printing purposes.
     """
-
+ 
     if not badgeWidth:
         badgeWidth = w
     if not badgeHeight:
@@ -403,8 +456,8 @@ def drawSheets(data, w, h, sheetWidth=8.5*pt, sheetHeight=11*pt, badgeWidth=None
                 colTick += 1
 
 
-
-def getData(path='../csvs/Badges - 6 23 10 am.csv'):
+# process data
+def getData(path=""):
     myData = []
     with open(path, encoding="utf-8") as myCSV:
         myCSVReader = csv.reader(myCSV)
@@ -415,8 +468,8 @@ def getData(path='../csvs/Badges - 6 23 10 am.csv'):
             myFirstName = str(myLine[0])
             myLastName = str(myLine[1])
             myName = myFirstName.strip() + ' ' + myLastName.strip()
-            if myName in exceptionsList:
-                myName = myFirstName.strip() + '\n' + myLastName.strip()
+
+            # in a few instances, break at hyphen
             if myName == 'Doris Palmeros-McManus':
                 myName = 'Doris Palmeros- McManus'
             if myName == 'Miroslava Polyakova-Grigorieva':
@@ -428,12 +481,18 @@ def getData(path='../csvs/Badges - 6 23 10 am.csv'):
             if myName == 'Tobias Frere-Jones':
                 myName = 'Tobias Frere- Jones'
             #myName = myName.replace('-', '−')
-            myName = myName.replace('ö', 'ö')
+
+    
+            # make uppercase    
+            myName = myName.upper()
+            
+            # replace MC with Mc
+            myName = myName.replace(' MC', " Mc")
+    
+    
+    
             myAffiliation = str(myLine[2])
-            if myAffiliation == 'The Unemployed Philosophers Guild':
-                myAffiliation = 'The Unemployed\nPhilosophers Guild'
-            elif myAffiliation == 'Natural History Museum of Los Angeles County':
-                myAffiliation = 'Natural History Museum of\nLos Angeles County'
+
             if myAffiliation.lower() in ['n/a', 'na', 'student', 'unemployed', 'usa', 'freelance', 'none', 'self-employed', ] or myAffiliation == myName:
                 myAffiliation = ''
 
@@ -444,16 +503,27 @@ def getData(path='../csvs/Badges - 6 23 10 am.csv'):
             #    break
     return myData
         
+
+if __name__ == "__main__":
+
+    data = getData('../csvs/Badges - 6 23 10 am.csv')
+    
+    if DEBUG:
+    data = data[:10]
+
+    makeSheetsPDF = True
+    makeIndividualsPDF = True
         
-data = getData()
-drawSheets(data, 4*pt, 3*pt)
-saveImage('~/desktop/sheets.pdf')
-newDrawing()
-for i,row in enumerate(data):
 
 
-    if True:
-        drawSafeBadge(row[0], row[1], True)
+    if makeSheetsPDF:
+        drawSheets(data, 4*pt, 3*pt)
+        saveImage('~/desktop/sheets.pdf')
 
+        if makeIndividualsPDF:
+            newDrawing()
 
-saveImage('~/desktop/individuals.pdf')
+    if makeIndividualsPDF:
+        for i,row in enumerate(data):
+           drawSafeBadge(row[0], row[1], True)
+        saveImage('~/desktop/individuals.pdf')
