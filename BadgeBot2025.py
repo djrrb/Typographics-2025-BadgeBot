@@ -52,7 +52,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     affiliationOffset = 20
     tfs = 85
     leadingMultiplier = .93
-    trackingValue=15/1000
+    trackingValue=20/1000
     
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
@@ -222,7 +222,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
                     except:
                         bpLetterWidth = 0
                         bpLetterHeight = tfs/3
-                    bpLetter.rotate(getRandom()*1.5, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
+                    bpLetter.rotate(getRandom()*2, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
                     bpLetter.translate(0, bounce)
 
                     bp1 = bp1.union(bpLetter)
@@ -446,15 +446,14 @@ def getData(path='../csvs/Badges - 6 23 10 am.csv'):
         
         
 data = getData()
-#drawSheets(data, 4*pt, 3*pt)
-#saveImage('~/desktop/sheets.pdf')
+drawSheets(data, 4*pt, 3*pt)
+saveImage('~/desktop/sheets.pdf')
 newDrawing()
 for i,row in enumerate(data):
-    if i < 250:
-        continue
-    #if 'Regan' in row[0]:
+
+
     if True:
         drawSafeBadge(row[0], row[1], True)
-    if i > 350:
-        break
+
+
 saveImage('~/desktop/individuals.pdf')
