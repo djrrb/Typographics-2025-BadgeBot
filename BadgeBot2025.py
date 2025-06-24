@@ -18,19 +18,24 @@ blueColor = (77/255, 170/255, 248/255)
 redColor = (234/255, 51/255, 35/255)
     
 exceptionsList = [
-    'Tobias Frere-Jones',
-    'Elizabeth Carey Smith',
-    'Sarah Cadigan-Fried',
-    'Carima El-Behairy',
-    'Cara Di Edwardo'
+
     ]
 
 
 def getRandom():
     return random.random()*random.choice([-1, 1])
+    
+def getRandomRange(theMin, theMax, alsoNegative=True):
+    value = randint(int(theMin*100), int(theMax*100) ) / 100
+    if alsoNegative:
+        if random.random() > .5:
+            value *= -1
+    return value
 
 
 def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
+    myName = myName.upper()
+    myName = myName.replace(' MC', " Mc")
     w, h = 4*pt, 3*pt
     if drawNewPage:
         newPage(w, h)
@@ -39,15 +44,15 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     fill(*blueColor)
     rect(0, 0, w, h)
     
-    m = 8
+    m = 6
     mw = w - m*2
     bottom = 8
     mh = h - m - bottom
 
     affiliationOffset = 20
     tfs = 85
-    leadingMultiplier = .9
-    trackingValue=12/1000
+    leadingMultiplier = .93
+    trackingValue=15/1000
     
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
@@ -55,6 +60,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
         if wordWidth > mw:
             tfs = mw/wordWidth * tfs
             
+
     lines = []
     words = []
     lineTotal = 0
@@ -62,21 +68,17 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
         wordWidth = textSize(wordFS)[0]
-        if lineTotal + wordWidth > mw:
+        if words and lineTotal + wordWidth > mw:
             lines.append(words)
             lineTotal = 0
             words = []
-        words.append(word)
-        lineTotal += wordWidth
+        if word:
+            words.append(word)
+        lineTotal += spaceWidth + wordWidth
     if words:
         lines.append(words)
         
-    if len(lines) > 2:
-        print('three lines')
-        tfs = 65
-
-    
-    
+        
     lines = []
     words = []
     lineTotal = 0
@@ -84,17 +86,28 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
         wordWidth = textSize(wordFS)[0]
-        if lineTotal + wordWidth > mw:
+        if words and lineTotal + wordWidth > mw:
             lines.append(words)
             lineTotal = 0
             words = []
-        words.append(word)
-        lineTotal += wordWidth
+        if word:
+            words.append(word)
+        lineTotal += spaceWidth+wordWidth
     if words:
         lines.append(words)
+       
+    if len(lines) > 2: 
+        if myAffiliation:
+            tfs = min(tfs, 58)
+        else:
+            tfs = min(tfs, 64)
+        
+    yOffset = 8
+    affiliationY = 0
+
         
     titleHeight = mh
-    yOffset = 5
+    
     if myAffiliation:
         bottom += affiliationOffset
         titleHeight -= affiliationOffset
@@ -114,16 +127,16 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     #fill(0, 1, 0, .5)
     #rect(m+xOffset, bottom+yOffset, textWidth, textHeight)
     
-    print(yOffset)
+    print(lines)
     
     textBoxOffset = tfs*.025
     
     nameBox = (m, bottom+yOffset+textBoxOffset, mw, textHeight)
     #textBox(fs, nameBox)
     
-    m += 5
-    mw -= 10
-    mh -= 10
+    m += 7
+    mw -= 12
+    mh -= 12
     
     #fill(0, .5)
     #rect(0, 0, width(), height())
@@ -144,6 +157,11 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     yAdvance = height()/2 + yOffset
     if len(lines) == 1:
         yAdvance -= tfs/2
+
+    if len(lines) > 2:
+        yAdvance += tfs/2 - 2
+
+
     
     with savedState():
         #translate(m, bottom+yOffset+textBoxOffset*2+textHeight)
@@ -153,20 +171,32 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
         #translate(0, -tfs*leadingMultiplier)
         if len(lines) == 1:
             yOffset -= 10
-        for line in lines:
+            
+        # draw first baseline
+        #with savedState():
+        #    stroke(1, 0, 0)
+        #    strokeWidth(5)
+        #    line((0, yAdvance), (width(), yAdvance))
+
+            
+            
+        bounceDirection = choice([-1, 1])
+        for myLine in lines:
             xAdvance = m
             with savedState():
-                line = ' '.join(line)
-                print('LINE', line)
-                lineFS = FormattedString(line, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
+                myLine = ' '.join(myLine)
+                lineFS = FormattedString(myLine, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
                 lineWidth = textSize(lineFS)[0]
                 xOffset = (mw-lineWidth)/2
+                if myLine[-1] == '-':
+                    xOffset += tfs/6
                 xAdvance += xOffset
                 fill(1, 1, 1)
                 #text(line, (xOffset, -tfs*leadingMultiplier))
                 previousLetterWidth = 0
                 previousLetter = ''
-                for letter in line:
+                
+                for letter in myLine:
                     comboFS = FormattedString(previousLetter+letter, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs) 
                     letterFS = FormattedString(letter, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs) 
                     letterWidth = textSize(letterFS)[0]
@@ -174,20 +204,25 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
                     
                     xAdvance += kern
                     
+                    bounce = randint(35, 55)/1000 * tfs * bounceDirection
+                    #bounce = 0
+
                     
-                    bounce = getRandom()* 75/1000*tfs
+                    if bounceDirection == 1:
+                        bounceDirection = -1
+                    elif bounceDirection == -1:
+                        bounceDirection = 1
                 
                     bpLetter = BezierPath()
                     
                     bpLetter.text(letter, (xAdvance, yAdvance), font=myHeadlineFont, fontSize=tfs)
-                    print(line, letter, ord(letter), bpLetter)
                     try:
                         bpLetterWidth = bpLetter.bounds()[2] - bpLetter.bounds()[0]
                         bpLetterHeight = bpLetter.bounds()[3] - bpLetter.bounds()[1]
                     except:
                         bpLetterWidth = 0
                         bpLetterHeight = tfs/3
-                    bpLetter.rotate(getRandom()*3.5, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
+                    bpLetter.rotate(getRandom()*1.5, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
                     bpLetter.translate(0, bounce)
 
                     bp1 = bp1.union(bpLetter)
@@ -195,7 +230,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
 
                     bpLetter = BezierPath()
                     
-                    displace = random.choice([-20/1000*tfs, 20/1000*tfs])
+                    displace = random.choice([-23/1000*tfs, 23/1000*tfs])
                     bpLetter.text(letter, (xAdvance+displace, yAdvance-displace), font=myHeadlineFont, fontSize=tfs)
 
 
@@ -206,8 +241,8 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
                         bpLetterWidth = 0
                         bpLetterHeight = tfs
 
-                    bpLetter.rotate(getRandom()*3.5, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
-                    bpLetter.translate(0, bounce)
+                    bpLetter.rotate(getRandomRange(2, 6, True), (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
+                    bpLetter.translate(0, bounce+getRandom()*2)
                     
                     
                     bp2 = bp2.difference(bpLetter)
@@ -222,23 +257,28 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
             #translate(0, -tfs*leadingMultiplier)
             yAdvance -= tfs*leadingMultiplier
     
-
         fill(1)   
         drawPath(bp1)
-        fill(*redColor)
-        #blendMode('multiply')
         fill(0)
         bp3 = bp2.difference(bp1)
         #bp3 = bp3.difference(theBox)
         drawPath(bp3)
         fill(*redColor)
-        bp3 = bp2.intersection(bp1)
-        drawPath(bp3)
+        bp4 = bp2.intersection(bp1)
+        drawPath(bp4)
+        
 
-    affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=12, lineHeight=12, fill=colors['overprint'], align="center")
 
 
-    textBox(affiliationFS, (0, 0, width(), 28))
+
+    affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=10, lineHeight=12, fill=colors['overprint'], align="center", tracking=1)
+    
+    if textOverflow(affiliationFS, (0, 0, mw, 12)):
+        print('LONG AFFILIATION', affiliationFS)
+        affiliationFS = FormattedString(myAffiliation, font=myAffiliationFont, fontSize=9, lineHeight=12, fill=colors['overprint'], align="center", tracking=0)
+
+
+    textBox(affiliationFS, (0, affiliationY, width(), 28))
 
 
 
@@ -364,7 +404,7 @@ def drawSheets(data, w, h, sheetWidth=8.5*pt, sheetHeight=11*pt, badgeWidth=None
 
 
 
-def getData(path='../csvs/Badges_June_11_8am.csv'):
+def getData(path='../csvs/Badges - 6 23 10 am.csv'):
     myData = []
     with open(path, encoding="utf-8") as myCSV:
         myCSVReader = csv.reader(myCSV)
@@ -377,13 +417,19 @@ def getData(path='../csvs/Badges_June_11_8am.csv'):
             myName = myFirstName.strip() + ' ' + myLastName.strip()
             if myName in exceptionsList:
                 myName = myFirstName.strip() + '\n' + myLastName.strip()
-            if myName == 'Vera van de Seyp':
-                myName = 'Vera van\nde Seyp'
-            if myName == 'Sherry Muyuan He':
-                myName = 'Sherry\nMuyuan He'
+            if myName == 'Doris Palmeros-McManus':
+                myName = 'Doris Palmeros- McManus'
+            if myName == 'Miroslava Polyakova-Grigorieva':
+                myName = 'Miroslava Polyakova- Grigorieva'
+            if myName == 'Naia Lee-Hendricks':
+                myName = 'Naia Lee- Hendricks'
+            if myName == 'Andrea Trabucco-Campos':
+                myName = 'Andrea Trabucco- Campos'
+            if myName == 'Tobias Frere-Jones':
+                myName = 'Tobias Frere- Jones'
             #myName = myName.replace('-', '−')
             myName = myName.replace('ö', 'ö')
-            myAffiliation = str(myLine[26])
+            myAffiliation = str(myLine[2])
             if myAffiliation == 'The Unemployed Philosophers Guild':
                 myAffiliation = 'The Unemployed\nPhilosophers Guild'
             elif myAffiliation == 'Natural History Museum of Los Angeles County':
@@ -403,6 +449,12 @@ data = getData()
 #drawSheets(data, 4*pt, 3*pt)
 #saveImage('~/desktop/sheets.pdf')
 newDrawing()
-for row in data:
-    drawSafeBadge(row[0], row[1], True)
+for i,row in enumerate(data):
+    if i < 250:
+        continue
+    #if 'Regan' in row[0]:
+    if True:
+        drawSafeBadge(row[0], row[1], True)
+    if i > 350:
+        break
 saveImage('~/desktop/individuals.pdf')
