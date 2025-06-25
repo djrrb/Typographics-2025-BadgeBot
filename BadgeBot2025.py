@@ -44,8 +44,12 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     # set some constants
     affiliationOffset = 20 # less room for name when affiliation is present
     tfs = 85 # the font size by default
-    leadingMultiplier = .94 # the leading by default
+    leadingMultiplier = .96 # the leading by default
     trackingValue=20/1000 # the tracking bydefault
+    
+    #for char in myName:
+    #    if ord(char) > 128:
+    #        leadingMultiplier = 1
 
     # reduce the font size to accomodate the longest word
     for word in myName.split(' '):
@@ -81,7 +85,9 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
     for word in myName.split(' '):
         wordFS = FormattedString(word, font=myHeadlineFont, fontSize=tfs, tracking=trackingValue*tfs)
         wordWidth = textSize(wordFS)[0]
-        if words and lineTotal + wordWidth > mw:
+        # make a new line
+        print(lines, words, wordWidth, lineTotal)
+        if words and lineTotal + wordWidth > (mw):
             lines.append(words)
             lineTotal = 0
             words = []
@@ -89,7 +95,11 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
             words.append(word)
         lineTotal += wordWidth# + spaceWidth
     if words:
-        lines.append(words)
+        #if lineTotal + wordWidth > (mw):
+        #    lines[-1] = lines[-1] + words
+        #else:
+        if True:
+            lines.append(words)
    
     # make some exceptions for long names
     if len(lines) > 2: 
@@ -99,6 +109,10 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
             tfs = min(tfs, 64)
     if len(lines) > 3 and myName.startswith('MARTA REBECA'):
         lines = [lines[0], lines[1], lines[2]+lines[3]]
+    if len(lines) > 2 and myName.startswith('SADIE RED'):
+        tfs = 70
+        lines = [lines[0], lines[1]+lines[2]]
+
     
     # okay now we are going to typeset the name
     yOffset = 8
@@ -240,6 +254,9 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
                     # determine bounce for this letter
                     # a random portion of the font size and the bounce direction
                     bounce = randint(35, 55)/1000 * tfs * bounceDirection
+                    # don't let accented chars bounce up
+                    if ord(letter) > 128:
+                        bounce = 55/1000 * tfs * -1
                     #bounce = 0
 
                     # change bounce direction
@@ -259,7 +276,7 @@ def drawSafeBadge(myName, myAffiliation, drawNewPage=False, topRowValue=0):
                         bpLetterWidth = 0
                         bpLetterHeight = tfs/3
                     # rotate from center of letter, if we know it
-                    bpLetter.rotate(getRandom()*2, (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
+                    bpLetter.rotate(getRandomRange(2, 2, True), (xAdvance+bpLetterWidth/2, yAdvance+bpLetterHeight/2))
                     # incorporate the bounce
                     bpLetter.translate(0, bounce)
 
@@ -496,6 +513,13 @@ def getData(path=""):
             if myAffiliation.lower() in ['n/a', 'na', 'student', 'unemployed', 'usa', 'freelance', 'none', 'self-employed', ] or myAffiliation == myName:
                 myAffiliation = ''
 
+            #go = False
+            #for char in myName:
+            #    if ord(char) > 128:
+            #        go = True
+            #if not go:
+            #    continue
+                
             myData.append((myName, myAffiliation))
         
             myTick += 1
@@ -508,8 +532,9 @@ if __name__ == "__main__":
 
     data = getData('../csvs/Badges - 6 23 10 am.csv')
     
-    if DEBUG:
-    data = data[:10]
+    #if DEBUG:
+    #    data = data[:10]
+
 
     makeSheetsPDF = True
     makeIndividualsPDF = True
